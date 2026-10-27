@@ -59,7 +59,9 @@ Dependency setup in a fresh worktree, if needed: <e.g. npm ci / uv sync, or "non
    is empty (fresh worktree), run `git reset --hard <base>`. Otherwise report BLOCKED.
 2. Confirm the targeted test command runs at all (it may fail on assertions, but it must not
    crash from setup). A broken harness is BLOCKED, not RED.
-If a hook refuses a git command, retry it as `git -C <your worktree path> ...`. Don't disable hooks.
+If a hook refuses a git command in one shell (seen with command-rewriting hooks in Bash), run
+the same command in the other available shell (e.g. PowerShell on Windows) as
+`git -C <your worktree path> ...`. Don't disable or edit hooks.
 
 ## Commits
 Commit on your worktree branch only: at least one commit after GREEN+REFACTOR, with a clear

@@ -52,6 +52,7 @@ For each delegated task:
   - permission mode: the same as yours
   - prompt: the contract plus `tdd-cycle.md`, inlined
   - then subscribe with `notify_when_idle`
+- Confirm every launch. Never pipe or filter the launch command's output. A real launch prints `backgrounded · ID · ocd-TASK`; if that line is missing, the session doesn't exist, and you must not put it in the ledger. Find the error and fix it first (`orchestration.md` → "Dispatch").
 - Run independent tasks concurrently (default cap: 3 at once, or the user's configured cap). A dependent task waits until the task it depends on is VERIFIED; then that task's branch becomes its base (`orchestration.md` → "Stacked tasks").
 - Record each task in the ledger (below).
 

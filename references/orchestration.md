@@ -152,7 +152,8 @@ The new orchestrator has a different name, so send each live subsession a messag
 ## Cleanup
 
 Ask the user before deleting anything. On approval:
-- `claude stop ID`, then `claude rm ID`, removes the session and its worktree when that is safe.
+- `claude stop ID` stops a running session. `claude rm ID` deletes the session and its worktree, and also works on sessions that have already exited. In testing, `rm` removed clean probe worktrees.
+- `claude rm` refuses to remove a worktree that holds unpushed commits or uncommitted changes, and prints a `--discard-unpushed COMMIT@WORKTREE` value. Pass that flag only after you've confirmed the commits are merged into the integration branch (`git branch --contains SHA`) and the user has approved. The task branch itself survives `rm`.
 - `git worktree remove <path>` removes the integration worktree.
 - `git branch -d <branch>` deletes a branch. Use `-d`, not `-D`; a refusal means it isn't merged.
 
