@@ -1,4 +1,4 @@
-# TDD cycle for a subsession
+# TDD cycle for a sub-session
 
 Follow these phases in order. Each phase produces evidence that goes in the final report. Evidence means a command you ran and the output you saw. Writing "tests fail" without running them is a false report, even when the claim is probably right.
 

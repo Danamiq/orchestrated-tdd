@@ -1,5 +1,5 @@
 ---
-description: Orchestrated TDD - plan, launch worktree subsessions (claude --bg) with strict TDD, relay approvals, verify integration
+description: Orchestrated TDD - plan, start worktree sub-sessions under this session with strict TDD, relay approvals, verify integration
 argument-hint: feature request
 ---
 
