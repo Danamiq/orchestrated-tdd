@@ -1,24 +1,56 @@
 # orchestrated-tdd
 
-A Claude Code skill that turns the main conversation into a development orchestrator. The orchestrator:
+A Claude Code skill that turns your main conversation into a development **orchestrator**. You describe a feature once. The orchestrator plans it, starts a **sub-session** for each independent workstream, and makes every sub-session build test-first with regression guards. It relays their questions to you, then merges and verifies the combined result itself.
 
-- plans a feature request and splits it into task contracts
-- starts each task as a *sub-session* under the current session (Claude Desktop `start_session`), in its own git worktree
-- lets each sub-session start its own subagents, while requiring strict TDD (observed RED → GREEN → REFACTOR) and regression tests
-- relays all sub-session questions and approvals to you, so you only ever talk to the main conversation; you can still open any sub-session in the Desktop app
-- merges the task branches in a separate integration worktree, runs the full suite there, and asks before landing anything on your branch
+You talk only to the orchestrator. Every sub-session is a real Claude Code session started *under* the orchestrator in its own git worktree, and you can open it in the Desktop app whenever you want.
+
+## How it works
+
+```mermaid
+flowchart TD
+    U([You]) -- "/ocd feature request" --> O[Orchestrator<br/>main session]
+    O -- "plan + task contracts" --> P{Independent<br/>workstreams?}
+    P -- "small / coupled" --> I[Orchestrator does it inline<br/>same TDD rules]
+    P -- "yes" --> S1[Sub-session A<br/>own worktree + branch]
+    P -- "yes" --> S2[Sub-session B<br/>own worktree + branch]
+    S1 -. "may start its own subagents" .-> SA[(subagents)]
+    S1 -- "questions / BLOCKED" --> O
+    O -- "asks you, relays answer" --> U
+    S1 -- "turn-end report:<br/>RED/GREEN/REFACTOR evidence" --> O
+    S2 -- "turn-end report" --> O
+    O -- "verify each branch" --> V[Integration worktree<br/>merge + full test suite]
+    V -- "final report + ask to merge" --> U
+```
+
+1. **Ground.** The orchestrator reads project instructions and code, detects the real test, lint, typecheck, and build commands, and records git state and its own reply address.
+2. **Plan.** It sets acceptance criteria and splits the work into tasks with file ownership and a dependency order. It decides what to delegate and what to do inline, and may give several tasks to one sub-session. It shows you the plan with any questions batched together.
+3. **Dispatch.** It starts one sub-session per workstream with `start_session` (`use_worktree: true`, fresh context). Each prompt is a filled task contract followed by the TDD cycle.
+4. **Track and route.** It keeps a ledger with this lifecycle: `PLANNED → RUNNING → BLOCKED | COMPLETED | FAILED → VERIFIED → INTEGRATED`. Turn-end reports arrive automatically. Questions come to you in plain language with options and a recommendation, and your answer goes back to the right sub-session.
+5. **Verify each task.** The orchestrator reads each branch diff, checks that the RED evidence failed for the right reason, re-runs the tests, and spot-checks a regression guard. A task COMPLETED is not yet VERIFIED.
+6. **Integrate.** It merges every branch into a separate integration worktree and runs the **full** suite, lint, typecheck, and build there. It resolves conflicts openly.
+7. **Report.** It tells you what was implemented, how each task went, the tests and regression guards, the exact verification commands and results, the integration, outstanding issues, and the approval decisions. Then it asks before landing anything on your branch.
+
+## Guarantees the skill enforces
+
+- **Single gateway.** Sub-sessions never ask you anything directly. Every question and approval passes through the orchestrator.
+- **Your branch is untouched** until the integrated result passes and you approve the merge.
+- **Evidence or it didn't happen.** RED, GREEN, REFACTOR, and verification count only with commands that were actually run and output that was actually observed.
+- **Regression guards are mandatory.** Every new behavior gets tests that fail if it breaks, and at least one guard is proven by breaking the code on purpose.
+- **Explicit approval** before destructive actions, production or live systems, migrations, new dependencies or costs, security-weakening changes, scope changes, merging, and cleanup. A recommendation never counts as approval, and a blocked action is never handed to another session to do.
 
 ## Install
 
 ```bash
 git clone https://github.com/Danamiq/orchestrated-tdd ~/.claude/skills/orchestrated-tdd
 mkdir -p ~/.claude/commands
-cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md   # optional /ocd shortcut
+cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md   # /ocd shortcut
 ```
 
-Restart Claude Code, or start a new session, to load the skill.
+Start a new Claude Code session to load it.
 
 ## Use
+
+From a Claude Code session in the **Claude Desktop app**:
 
 ```
 /ocd add CSV export to GET /reports/:id/export and a `reports export <id> --format csv` CLI command
@@ -26,24 +58,39 @@ Restart Claude Code, or start a new session, to load the skill.
 
 `/orchestrated-tdd ...` works too, and Claude may pick the skill on its own for multi-file features you ask to have built test-first.
 
+## Requirements
+
+- **Claude Desktop (Code).** Sub-sessions use the Desktop session tools: `mcp__ccd_session__start_session`, `mcp__ccd_session_mgmt__get_session`, `list_events`, and `archive_session`, plus `SendMessage`.
+- **Terminal CLI.** These tools don't exist there. The skill tells you so and offers a fallback you must approve: separate `claude --bg` sessions in worktrees. Those are detached sessions, not children of the orchestrator. They need a trusted workspace and should run in `auto` or `acceptEdits` mode.
+- **A git repository.** Only committed work reaches worktrees. If the tasks depend on uncommitted changes, the orchestrator asks you how to proceed.
+
+## Limitations
+
+- Messages between sessions arrive at the receiver's next tool round or turn; there are no live interrupts.
+- A tool-permission prompt inside a sub-session can't be relayed. The orchestrator tells you which sub-session to open and answer.
+- Worktrees isolate edits, not semantics, which is why integration verification is mandatory.
+- Each sub-session is a full session, so parallel work multiplies token use, disk, and dependency installs. The default cap is 3 running at once.
+
+## Verification status
+
+| What | How it was checked |
+|---|---|
+| Skill structure and frontmatter | `quick_validate.py` from Anthropic's skill-creator: `Skill is valid!` |
+| `start_session` parameters, turn-end notes, `SendMessage` to `local_…` ids, `get_session` / `list_events` / `archive_session` | Real Claude Desktop sessions in which a parent ran five worktree sub-sessions in parallel |
+| CLI fallback (`claude --bg -w`, cross-session messages both ways, waking idle sessions, nested subagents, contract text passed intact, `stop`/`rm` by id) | Live probe on Claude Code 2.1.311 |
+| End-to-end `/ocd` run on a real feature | **Not yet run.** `evals/` holds three test prompts; they need a target repo. |
+
 ## Layout
 
 | Path | Purpose |
 |---|---|
-| `SKILL.md` | Orchestrator workflow, approval boundaries, final report format |
-| `references/task-contract.md` | Prompt template given to each sub-session |
-| `references/tdd-cycle.md` | TDD phases A–F, regression-guard checklist, stack detection |
-| `references/orchestration.md` | Starting sub-sessions, turn-end reports, messaging, worktrees, retries, conflicts, integration, CLI fallback |
+| `SKILL.md` | Orchestrator workflow, invariants, approval boundaries, final report format |
+| `references/orchestration.md` | Sub-session tools, dispatch, messaging and turn-end reports, status, permission prompts, worktree base, stacked tasks, retries, conflicts, integration, user access, cleanup, CLI fallback |
+| `references/task-contract.md` | Prompt template each sub-session receives |
+| `references/tdd-cycle.md` | TDD phases A–F, regression-guard checklist, stack detection; appended to every sub-session prompt |
 | `commands/ocd.md` | `/ocd` slash-command wrapper |
-| `evals/` | Test-case prompts for `claude plugin eval`. They need a target repo; they are not run in CI. |
-
-## Requirements and limitations
-
-- Run it from a Claude Code session in the **Claude Desktop app**: sub-sessions use the Desktop session tools (`mcp__ccd_session__start_session`, `get_session`, `list_events`). In a terminal CLI session those tools don't exist. The skill says so and offers a fallback (separate `claude --bg` sessions), which you must approve.
-- The target project must be a git repository. Uncommitted changes are invisible to worktrees.
-- A permission prompt inside a sub-session can't be relayed; open that sub-session in the Desktop app to answer it.
-- Messages between sessions arrive at the receiver's next tool round or turn, not as live interrupts.
-- See `references/orchestration.md` → "Known limitations".
+| `evals/` | Test cases in the `claude plugin eval` layout |
+| `CHANGELOG.md` | Design history |
 
 ## License
 

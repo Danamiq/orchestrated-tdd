@@ -52,7 +52,7 @@ Rules for guards:
 3. If anything fails, debug and fix it within scope. Writing the code does not make the task COMPLETED.
 4. Inspect `git diff <base>...HEAD` and `git status`: no unrelated changes, no accidental deletions, no secrets or credentials, no debug output, no skipped or disabled tests, no unfinished TODOs.
 5. Commit on your worktree branch.
-6. Write the final report in the contract's format. List every check you did **not** run and why (missing infrastructure, needs credentials, too slow, and so on). If one of those checks matters, report BLOCKED instead of COMPLETED.
+6. Write the final report in the contract's format as your final message of the turn; it reaches the orchestrator automatically. List every check you did **not** run and why (missing infrastructure, needs credentials, too slow, and so on). If one of those checks matters, report BLOCKED instead of COMPLETED.
 
 ## Stack detection hints
 
