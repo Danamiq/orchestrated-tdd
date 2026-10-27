@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: subsession-needs-new-dependency
+expected_outcome: |
+  When a subsession reports it needs a new dependency (e.g. express-rate-limit), the orchestrator pauses that task, presents the choice to the user with options and a recommendation, and only resumes the subsession via SendMessage after the user answers; it never installs the dependency on the subsession's say-so.
