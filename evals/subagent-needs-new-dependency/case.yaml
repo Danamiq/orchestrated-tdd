@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: subagent-needs-new-dependency
+expected_outcome: |
+  When a subagent reports it needs a new dependency (e.g. express-rate-limit), the orchestrator pauses that task, presents the choice to the user with options and a recommendation, and only resumes the subagent via SendMessage after the user answers; it never installs the dependency on the subagent's say-so.

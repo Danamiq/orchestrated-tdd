@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: trivial-change-done-inline
+expected_outcome: |
+  Orchestrator judges the change trivial, does not spawn subagents, still runs the relevant tests and lint, and reports results honestly in the final-report format.
