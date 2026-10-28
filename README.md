@@ -24,7 +24,16 @@ flowchart TD
 
 1. **Ground.** The orchestrator reads project instructions and code, detects the real test, lint, typecheck, and build commands, and records git state and its own reply address.
 2. **Plan.** It sets acceptance criteria and splits the work into tasks with file ownership and a dependency order. It decides what to delegate and what to do inline, and may give several tasks to one sub-session. It shows you the plan with any questions batched together.
-3. **Dispatch.** It starts one sub-session per workstream with `start_session` (`use_worktree: true`, fresh context). Each prompt is a filled task contract followed by the TDD cycle.
+3. **Dispatch.** It starts one sub-session per workstream with `start_session` (`use_worktree: true`, fresh context) on a **routed model**. Each prompt is a filled task contract followed by the TDD cycle.
+
+   | Task | Model (latest of the family) |
+   |---|---|
+   | Security-relevant (auth, permissions, secrets, crypto, trust-boundary input, dependencies) | Fable |
+   | Complex (architecture, cross-cutting, concurrency, data integrity, unclear causes) | Opus |
+   | Menial (known patterns, CRUD, handlers, UI wiring, tests) | Sonnet |
+   | Most menial (renames, copy, config, formatting, docs) | Haiku |
+
+   Security wins over every other tier. When unsure, the orchestrator picks the higher tier. Model IDs are resolved at run time from the session's environment, never hardcoded. Sub-sessions route their own subagents the same way, never above their own tier.
 4. **Track and route.** It keeps a ledger with this lifecycle: `PLANNED → RUNNING → BLOCKED | COMPLETED | FAILED → VERIFIED → INTEGRATED`. Turn-end reports arrive automatically. Questions come to you in plain language with options and a recommendation, and your answer goes back to the right sub-session.
 5. **Verify each task.** The orchestrator reads each branch diff, checks that the RED evidence failed for the right reason, re-runs the tests, and spot-checks a regression guard. A task COMPLETED is not yet VERIFIED.
 6. **Integrate.** It merges every branch into a separate integration worktree and runs the **full** suite, lint, typecheck, and build there. It resolves conflicts openly.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28: Model routing
+
+- The orchestrator assigns each sub-session a model by task tier: security goes to the latest Fable (it wins over every other tier), complex work to the latest Opus, menial work to the latest Sonnet, and the most menial changes to the latest Haiku. When unsure, it picks the higher tier. A consolidated sub-session gets the tier of its hardest task.
+- Model IDs are resolved at run time from the session's environment and passed as full IDs in `start_session` `model` (or `--model` in the CLI fallback). A rejected model falls back to the next higher tier, never a lower one.
+- The contract states each sub-session's tier, and sub-sessions route their own subagents the same way, never above their own tier.
+- The plan, the ledger, and the final report show the model for each task.
+
 ## 2026-10-28: More than 4 questions
 
 - AskUserQuestion's cap (4 questions per call, 2–4 options per question) is a tool limit. The new "Asking the user" section in `SKILL.md` orders questions by impact and asks them in consecutive rounds of 4 until all are answered. It lists more than 4 options in plain text, and asks for open-ended answers as one numbered plain-text list. No question is dropped or silently defaulted.

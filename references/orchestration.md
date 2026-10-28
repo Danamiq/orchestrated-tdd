@@ -55,6 +55,7 @@ Call `mcp__ccd_session__start_session` once per task:
   "context": "fresh",
   "use_worktree": true,
   "branch_name": "ocd-TASK",
+  "model": "<routed model id, e.g. claude-opus-5-5>",
   "source_branch": "<user's current branch>",
   "background": "<3-6 lines: feature goal, the user's decisions so far, sibling sub-sessions and what each owns, your reply address>",
   "prompt": "<filled task-contract.md, then the full text of tdd-cycle.md>"
@@ -190,7 +191,7 @@ Use this only when the sub-session tools are missing **and** the user chose this
 - Launch from the repo root. Never pipe or filter the output. Confirm the line `backgrounded · ID · ocd-TASK`; a missing line means no session exists.
 
 ```bash
-command claude --bg -n ocd-TASK -w ocd-TASK --permission-mode "$MODE" \
+command claude --bg -n ocd-TASK -w ocd-TASK --permission-mode "$MODE" --model "$MODEL_ID" \
   "$(cat "$CONTRACT" "$SKILL_DIR/references/tdd-cycle.md")"
 ```
 
