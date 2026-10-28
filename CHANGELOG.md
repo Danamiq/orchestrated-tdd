@@ -4,6 +4,7 @@
 
 - New `references/knowledge-graph.md`. When the repo has graphify, codebase-memory-mcp, or a graph tool named by the project, the orchestrator explores with it and traces inbound callers to divide ownership. It gives each sub-session a small context slice (symbols with `file:line`, callers, tests, and the graph commands) to cut exploration tokens.
 - The contract gained a "Knowledge graph" section, and TDD Phase A starts from the slice.
+- When no graph exists, the orchestrator asks the user once, during Ground, whether to index or build one. It offers only installed tools, each with its cost; a refusal stands for that chat.
 - Sub-sessions never reindex or commit graph artifacts. The orchestrator refreshes the graph once, after integration, and runs a ripple check on the changed public symbols.
 
 ## 2026-10-28: `/ocd-fix`

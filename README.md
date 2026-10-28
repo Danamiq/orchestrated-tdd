@@ -39,7 +39,7 @@ If the repo has a code knowledge graph, the skill uses it to cut what each sub-s
 - The sub-session starts from that slice, queries the graph, and reads snippets instead of whole files.
 - Sub-sessions never reindex or commit graph files, because parallel branches would conflict on them. The orchestrator refreshes the graph once, after integration, and runs a ripple check on the changed public symbols.
 
-Without a graph, everything works as before, using normal search.
+No graph yet? During Ground the orchestrator asks whether to build one. It offers only tools you have installed, with their cost: a codebase-memory-mcp index (local, no API calls), or a graphify graph (the first build may call an LLM API, and it writes `graphify-out/` into the repo). It notes that the savings grow with long runs, many sub-sessions, and later `/ocd-fix` iterations. If you say no, it uses normal search and doesn't ask again in that chat.
 
 ## Guarantees the skill enforces
 
