@@ -152,7 +152,7 @@ In fix mode (`/ocd-fix`), reuse the sub-sessions that built the feature; don't c
 
 **Finding the owners**
 - Ledger first. Otherwise call `list_sessions` with `linked: true` and a small `limit`, and match `ocd:` titles and `claude/ocd-*` branches. Confirm with `get_session`: `branch`, `cwd`, `isArchived`, `isRunning`.
-- Then confirm ownership from git: `git log --format=%H -- <files>` and `git branch --contains <commit>` show which `claude/ocd-*` branch introduced the code you need to fix.
+- Then confirm ownership from git: `git log --format=%H -- <files>` and `git branch --contains <commit>` show which `claude/ocd-*` branch introduced the code you need to fix. With a knowledge graph, locate the faulty symbol and its callers there first (`knowledge-graph.md`), and put that small slice in the fix contract.
 
 **Reaching the owners**
 - Use `SendMessage` with `to: "<session_id>"`. The message starts its next turn with its full context, and its turn-end report comes back to you as usual.

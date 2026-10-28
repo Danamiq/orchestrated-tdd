@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28: Knowledge-graph traversal
+
+- New `references/knowledge-graph.md`. When the repo has graphify, codebase-memory-mcp, or a graph tool named by the project, the orchestrator explores with it and traces inbound callers to divide ownership. It gives each sub-session a small context slice (symbols with `file:line`, callers, tests, and the graph commands) to cut exploration tokens.
+- The contract gained a "Knowledge graph" section, and TDD Phase A starts from the slice.
+- Sub-sessions never reindex or commit graph artifacts. The orchestrator refreshes the graph once, after integration, and runs a ripple check on the changed public symbols.
+
 ## 2026-10-28: `/ocd-fix`
 
 - New fix mode for iterating on a feature that `/ocd` already built. The orchestrator reuses the sub-sessions that built the code and creates no new child sessions.

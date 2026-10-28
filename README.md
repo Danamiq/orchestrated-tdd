@@ -30,6 +30,17 @@ flowchart TD
 6. **Integrate.** It merges every branch into a separate integration worktree and runs the **full** suite, lint, typecheck, and build there. It resolves conflicts openly.
 7. **Report.** It tells you what was implemented, how each task went, the tests and regression guards, the exact verification commands and results, the integration, outstanding issues, and the approval decisions. Then it asks before landing anything on your branch.
 
+## Token savings with a knowledge graph
+
+If the repo has a code knowledge graph, the skill uses it to cut what each sub-session spends on exploration. It recognizes graphify (`graphify-out/graph.json`), codebase-memory-mcp, and any graph tool your project instructions name.
+
+- The orchestrator queries the graph once. It maps the structure, finds the affected symbols, and traces their inbound callers, which also tells it how to divide file ownership.
+- It gives each sub-session a small **context slice**: the symbols to change with `file:line`, the callers that must keep working, and the covering tests, plus the exact graph commands.
+- The sub-session starts from that slice, queries the graph, and reads snippets instead of whole files.
+- Sub-sessions never reindex or commit graph files, because parallel branches would conflict on them. The orchestrator refreshes the graph once, after integration, and runs a ripple check on the changed public symbols.
+
+Without a graph, everything works as before, using normal search.
+
 ## Guarantees the skill enforces
 
 - **Single gateway.** Sub-sessions never ask you anything directly. Every question and approval passes through the orchestrator.
@@ -102,6 +113,7 @@ If an owner is archived or unreachable, the orchestrator asks you before doing a
 |---|---|
 | `SKILL.md` | Orchestrator workflow, invariants, approval boundaries, final report format |
 | `references/orchestration.md` | Sub-session tools, dispatch, messaging and turn-end reports, status, permission prompts, worktree base, stacked tasks, retries, conflicts, integration, fix iterations, user access, cleanup, CLI fallback |
+| `references/knowledge-graph.md` | Detecting graphify / codebase-memory-mcp, context slices, sub-session graph rules, post-integration refresh |
 | `references/task-contract.md` | Prompt template each sub-session receives, plus the fix-contract template for `/ocd-fix` |
 | `references/tdd-cycle.md` | TDD phases A–F, regression-guard checklist, stack detection; appended to every sub-session prompt |
 | `commands/ocd.md` | `/ocd` slash command: new feature |

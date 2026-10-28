@@ -12,6 +12,7 @@ A **sub-session** is a full Claude Code session you start *under this one* with 
 Supporting files (`SKILL_DIR` is the base directory shown when this skill loaded):
 - `references/orchestration.md` — starting sub-sessions, messaging and turn-end reports, status, permission prompts, worktree base, retries, conflicts, merge procedure, user access, CLI fallback. Read it before the first dispatch and whenever something goes wrong.
 - `references/task-contract.md` — the prompt template for every sub-session. Read it before the first dispatch.
+- `references/knowledge-graph.md` — if the repo has a code knowledge graph (graphify, codebase-memory-mcp, or another tool named by the project), how to detect it, build each sub-session's context slice, and cut exploration tokens. Read it during Ground if a graph is present.
 - `references/tdd-cycle.md` — phases A–F and the regression-guard checklist. It is inlined into every sub-session prompt; you use it to judge their evidence.
 
 ## Invariants
@@ -26,6 +27,7 @@ Supporting files (`SKILL_DIR` is the base directory shown when this skill loaded
 ### 1. Ground
 
 - Read project instructions (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING`, `/docs` as relevant) and the code the request touches.
+- **Knowledge graph?** Look for `graphify-out/graph.json`, codebase-memory-mcp, or a graph tool named in the project instructions. If one exists, follow `references/knowledge-graph.md`: refresh it, explore with it instead of reading files broadly, and run inbound traces on the symbols you'll change. Those traces drive ownership and dependency order.
 - Detect the stack and record the exact **verification commands**: test (targeted + full), lint, typecheck, format check, build. Use the project's scripts (`package.json`, `Makefile`, `pyproject.toml`, `Cargo.toml`, `go.mod`, CI config). Don't guess a runner; if none exists, that is a question for the user.
 - Record git state: repo root, current branch, `BASE_SHA` (`git rev-parse HEAD`), and whether the tree has uncommitted changes. If the tasks depend on uncommitted work, that needs a user decision (`orchestration.md` → "Worktree base").
 - Record your reply address (top line of `ListAgents`: "This session is NAME"). Every contract needs it.
@@ -46,7 +48,7 @@ Show the plan to the user in one compact message, together with any **batched** 
 ### 3. Dispatch
 
 For each delegated task:
-- Fill `references/task-contract.md` completely. The sub-session starts fresh and knows nothing except `background` and the contract.
+- Fill `references/task-contract.md` completely. The sub-session starts fresh and knows nothing except `background` and the contract. If the repo has a graph, include the task's **context slice** and graph commands, so the sub-session doesn't re-explore what you already mapped.
 - Start it with `mcp__ccd_session__start_session` (`orchestration.md` → "Dispatch") using:
   - `initiation: "user_asked"`, `context: "fresh"`
   - `use_worktree: true`, `branch_name: "ocd-TASK"`, and `source_branch` set to the user's branch
@@ -91,7 +93,7 @@ Only after every task is VERIFIED and **no `ocd-` sub-session is running**:
    - Otherwise → send it back to the owning sub-session.
    Never silently discard either side.
 3. In the integration worktree run the **full** verification set: all tests, lint, typecheck, build. Unit tests passing per task does not prove integration.
-4. Review the combined diff against the original request: every acceptance criterion met, no duplicate logic, no conflicting interfaces, regression guards cover each new behavior.
+4. Review the combined diff against the original request: every acceptance criterion met, no duplicate logic, no conflicting interfaces, regression guards cover each new behavior. With a graph, also run the ripple check on changed public symbols, and refresh tracked graph files once, here (`knowledge-graph.md` → "After integration").
 5. Fix or report every remaining failure. Don't call the work complete while a material failure or integration blocker is open.
 6. Ask the user to approve landing the integration branch on their branch (merge, or leave the branch for them). Archiving sub-sessions and removing worktrees and branches is cleanup the user approves too.
 

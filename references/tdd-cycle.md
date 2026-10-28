@@ -4,7 +4,7 @@ Follow these phases in order. Each phase produces evidence that goes in the fina
 
 ## A. Understand
 
-- Read the owned code, its callers, its existing tests, and the project rules named in the contract.
+- Read the owned code, its callers, its existing tests, and the project rules named in the contract. If the contract has a "Knowledge graph" section, start from its context slice and graph queries (callers, snippets). Open whole files only when a snippet isn't enough; that saves most of the exploration cost.
 - Pin down the intended behavior and its edge cases: empty/null, boundaries, invalid input, error paths, concurrency, time zones, unicode, permissions, partial failure, as relevant.
 - Choose the smallest testable slice. Big tasks become several RED→GREEN loops, not one giant one.
 - List the existing behavior that must stay unchanged. Make sure some test covers it, or add a characterization test first and see it pass.

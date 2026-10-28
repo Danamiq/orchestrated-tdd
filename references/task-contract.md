@@ -31,6 +31,20 @@ Project rules to follow: <CLAUDE.md / conventions that matter for this task>
 Relevant code: <files, symbols, existing tests to imitate>
 Existing behavior that must not change: <list>
 
+## Knowledge graph (omit this section if the repo has none)
+Tool + commands: <e.g. `codebase-memory-mcp cli search_graph --project P --query "..."`,
+  `... trace_path --project P --function-name F --direction inbound`, `... get_code_snippet`;
+  or `graphify query|explain|path ... --graph <main checkout>/graphify-out/graph.json`>
+Context slice:
+- Symbols you change: <qualified name — file:line>
+- Callers that must keep working: <qualified name — file:line>
+- Tests covering them: <test files / names>
+Rules: start from this slice, then query the graph; open a file only when a snippet isn't
+enough. Trace inbound callers before changing a signature or behavior. The graph shows
+the base commit, not your edits (use git diff for those). Don't reindex, don't run
+`graphify update`, and don't commit graph artifacts. If a query fails or looks stale, fall
+back to grep and reads.
+
 ## Ownership
 You may modify: <files/dirs/interfaces>
 You may read anything. Do not modify anything else. If the task needs a change outside
