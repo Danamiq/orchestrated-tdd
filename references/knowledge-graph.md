@@ -12,9 +12,25 @@ If no usable graph exists, ask the user whether to build one (see "No graph yet:
 | `mcp__codebase-memory-mcp__*` tools, or the `codebase-memory-mcp` binary | codebase-memory-mcp (CBM) | `index_status`, `detect_changes`, `get_architecture`, `search_graph`, `trace_path`, `get_code_snippet`, `query_graph` |
 | Project instructions (`CLAUDE.md`, `AGENTS.md`) name another graph or index tool | that tool | follow the project's instructions |
 
-**Freshness** (for a graph that already exists; refreshing it needs no question):
-- **CBM:** run `index_status` for the repo's project. If it is indexed, run `detect_changes`. If it isn't indexed, see the next section.
-- **graphify:** if the graph is older than HEAD, run `graphify update .`. It is AST-only and needs no LLM.
+## Graph source: latest main first
+
+Before any graph query, **update the graph to the latest commit of the repo's main (default) branch**. The only exception is when the user explicitly names another branch for the graph: then use that branch's latest commit instead. A graph left at whatever the checkout happened to hold sends every sub-session to stale symbols and callers.
+
+1. **Find the branch.** Use the branch the user named. Otherwise use the default branch: `git symbolic-ref --short refs/remotes/origin/HEAD` (e.g. `origin/main`). If that ref isn't set, run `git remote show origin` and read "HEAD branch". With no remote, use the local `main` or `master`.
+2. **Get its latest commit.** Run `git fetch origin <branch>`; this only reads from the remote and changes no local branch. Record `GRAPH_SHA` = `git rev-parse origin/<branch>`. If the fetch fails (offline, no remote), use the local branch tip and say so in the plan.
+3. **Pick where to build.** Never check out, pull, reset, or stash in the user's working tree for this.
+   - **In place:** if the main checkout is already on that branch, at `GRAPH_SHA`, with a clean `git status`, refresh it there.
+   - **Graph worktree:** otherwise use `git worktree add --detach .claude/worktrees/ocd-graph GRAPH_SHA`, or `git -C .claude/worktrees/ocd-graph checkout --detach GRAPH_SHA` if it already exists. Build there and reuse it on later runs.
+4. **Refresh.** These need no question, because they are local and free:
+   - **CBM:** `index_repository` on the chosen path, which updates incrementally if it is already indexed. Then `index_status` to confirm. Record the CBM project name for that path; sub-sessions query that project.
+   - **graphify:** `graphify update <path>`, which is AST-only with no LLM. Sub-sessions then pass `--graph <path>/graphify-out/graph.json`.
+   - If the graph doesn't exist yet at all, first ask the user (next section). If they agree, build it at `GRAPH_SHA` the same way.
+5. **Report it** in the plan message, in one line: "Graph: <tool> at <branch>@<short GRAPH_SHA>". The user can then say "build it from branch X" and you redo steps 1–4 for X.
+
+**When the task base differs from the graph.** Tasks branch from the user's current branch (`BASE_SHA`). If that isn't `GRAPH_SHA`, the graph shows main, not the base:
+- Compare the two with `git diff --stat GRAPH_SHA BASE_SHA`.
+- Put that line in each contract, so sub-sessions confirm any listed file with a quick read or diff before trusting the graph for it.
+- If the difference is large (many changed files in the task's area), say so in the plan and suggest building the graph from the user's branch instead.
 
 ## No graph yet: ask the user
 
@@ -61,11 +77,11 @@ A slice is a handful of lines that replaces dozens of file reads.
 
 1. Start Phase A with the slice, then query the graph. Open a file only when a snippet isn't enough.
 2. Before changing a symbol's signature or behavior, trace its inbound callers and update every call site in your ownership. Report call sites outside your ownership as BLOCKED.
-3. The graph reflects the **base** commit, not your edits. Use `git diff` for your own changes.
+3. The graph reflects `GRAPH_SHA` (latest main, or the branch the user chose), not your edits and not necessarily your base. Use `git diff` for your own changes. For files the contract lists as differing between graph and base, read or diff before trusting the graph.
 4. **Don't** reindex your worktree, and **don't** run `graphify update` or commit graph artifacts (`graphify-out/`, index files). Parallel branches that each change the graph produce merge conflicts.
 
 ## After integration
 
 - Run a ripple check on the combined diff. For each changed public symbol, `trace_path` inbound against the base index lists the callers that existed before. Confirm the integration tests exercise them, alongside the full suite.
-- If the project tracks graph files, refresh them once, in the integration worktree: `graphify update .`, and commit that update with the integration. For CBM, run `detect_changes` or reindex after the merge lands. Mention in the final report that the graph was refreshed.
+- If the project tracks graph files, refresh them once, in the integration worktree: `graphify update .`, and commit that update with the integration. The next `/ocd` run still starts by refreshing from latest main, as described in "Graph source". Mention in the final report that the graph was refreshed.
 - If the repo has graphify's git merge driver set up (`graphify hook install`), conflicts on `graph.json` merge automatically. Otherwise, regenerate the graph instead of hand-merging it.

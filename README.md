@@ -43,6 +43,7 @@ flowchart TD
 
 If the repo has a code knowledge graph, the skill uses it to cut what each sub-session spends on exploration. It recognizes graphify (`graphify-out/graph.json`), codebase-memory-mcp, and any graph tool your project instructions name.
 
+- The orchestrator first updates the graph to the **latest commit of the main (default) branch**, or of another branch if you name one. It fetches that branch and builds in place only when your checkout is already clean on that commit; otherwise it builds in a detached `ocd-graph` worktree, so your working tree is never touched. It tells you which branch and commit the graph reflects.
 - The orchestrator queries the graph once. It maps the structure, finds the affected symbols, and traces their inbound callers, which also tells it how to divide file ownership.
 - It gives each sub-session a small **context slice**: the symbols to change with `file:line`, the callers that must keep working, and the covering tests, plus the exact graph commands.
 - The sub-session starts from that slice, queries the graph, and reads snippets instead of whole files.

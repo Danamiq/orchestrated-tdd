@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28: Graph from latest main
+
+- Before any graph query, the orchestrator updates the graph to the latest commit of the default branch (`git fetch`, then `origin/<default>`), unless the user names another branch for the graph.
+- The user's working tree is never touched. The graph is refreshed in place only when the checkout is already clean on that commit; otherwise it is built in a reusable detached worktree, `.claude/worktrees/ocd-graph`.
+- The plan reports "Graph: tool at branch@sha". Contracts state the graph commit, the task base, and the files that differ between the two, so sub-sessions verify those files before trusting the graph.
+
 ## 2026-10-28: Model routing
 
 - The orchestrator assigns each sub-session a model by task tier: security goes to the latest Fable (it wins over every other tier), complex work to the latest Opus, menial work to the latest Sonnet, and the most menial changes to the latest Haiku. When unsure, it picks the higher tier. A consolidated sub-session gets the tier of its hardest task.
