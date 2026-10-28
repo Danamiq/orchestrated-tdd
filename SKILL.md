@@ -1,6 +1,6 @@
 ---
 name: orchestrated-tdd
-description: Turns the main conversation into a development orchestrator for real feature work. It plans the request, splits it into task contracts, and starts each one as a sub-session under the current session (Claude Desktop start_session), each in its own git worktree. A sub-session may start its own subagents. It follows strict TDD (observed RED, GREEN, REFACTOR) and adds mandatory regression tests. The orchestrator relays every sub-session question and approval to the user, then merges and independently verifies the combined result. Use it when the user invokes /ocd, /ocd-fix (iterate on a built feature, reusing its sub-sessions), or /orchestrated-tdd, or asks to orchestrate, delegate, fan out, or parallelize implementation across sub-sessions, sessions, or worktrees. Also use it for any multi-file feature, refactor, or bugfix the user wants built test-first with regression guards and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
+description: Turns the main conversation into a development orchestrator. It plans the work, splits it into task contracts, and starts each as a sub-session under the current session (Claude Desktop start_session) in its own git worktree, on a model routed by task difficulty. Sub-sessions follow strict TDD (observed RED, GREEN, REFACTOR) with mandatory regression tests. The orchestrator relays every question and approval to the user, then merges and verifies the combined result. Use it when the user invokes /ocd (feature), /ocd-fix (iterate on a built feature with its existing sub-sessions), /ocd-migrate (move a codebase from one language to another), or /orchestrated-tdd, or asks to orchestrate, delegate, or parallelize implementation across sub-sessions or worktrees. Also use it for multi-file features, refactors, bugfixes, or language migrations the user wants built test-first and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
 ---
 
 # Orchestrated TDD
@@ -13,6 +13,7 @@ Supporting files (`SKILL_DIR` is the base directory shown when this skill loaded
 - `references/orchestration.md` — starting sub-sessions, messaging and turn-end reports, status, permission prompts, worktree base, retries, conflicts, merge procedure, user access, CLI fallback. Read it before the first dispatch and whenever something goes wrong.
 - `references/task-contract.md` — the prompt template for every sub-session. Read it before the first dispatch.
 - `references/knowledge-graph.md` — if the repo has a code knowledge graph (graphify, codebase-memory-mcp, or another tool named by the project), how to detect it, build each sub-session's context slice, and cut exploration tokens. Read it during Ground if a graph is present.
+- `references/migration.md` — `/ocd-migrate`: language-agnostic codebase migration (parity harness, leaf-first slices, translation hazards, switch-over, plan file). Read it only in migration mode.
 - `references/tdd-cycle.md` — phases A–F and the regression-guard checklist. It is inlined into every sub-session prompt; you use it to judge their evidence.
 
 ## Invariants
@@ -158,6 +159,19 @@ Rules:
 - Tell each sub-session its tier in the contract, so it routes its own subagents the same way. A subagent never gets a higher tier than its sub-session.
 - Your own work as orchestrator (planning, verification, integration) stays on your current model.
 - `/ocd-fix` reuses the owner session, which keeps its model. If a fix needs a higher tier than the owner runs (e.g. a security fix in a Sonnet-built area), ask the user: the owner does it anyway (keeps context), or a new sub-session on the right tier (needs approval). In the CLI fallback, pass `--model <id>`.
+
+## Migration mode (`/ocd-migrate`)
+
+A language or runtime migration (e.g. a Python backend to Rust), for any pair of languages. Read `references/migration.md` and follow its phases on top of this workflow:
+1. decisions (ask)
+2. inventory, ordered leaf-first
+3. a language-neutral **parity harness**, built and passed against the source before any porting
+4. the target foundation
+5. slice-by-slice porting, where each slice's parity tests go RED then GREEN against the target
+6. per-slice switch-over with approval
+7. full parity verification against both sides
+
+The existing implementation is the specification. Never modify or delete the source, never weaken a parity test, and get approval for every intended behavior change. Keep progress in a plan file on the migration branch so the work can resume in a later chat.
 
 ## Asking the user
 

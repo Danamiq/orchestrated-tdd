@@ -1,0 +1,7 @@
+---
+type: llm
+focus: trace
+weight: 1
+---
+
+The result matches this description: Orchestrator asks Phase 0 decisions (strategy, boundary, parity standard, dependency map, retiring source) before porting; builds an HTTP-level parity harness with golden fixtures recorded from the Python service and shows it passing against the source; scaffolds the Rust target with a switch-over mechanism defaulting to Python; ports slices leaf-first with parity RED then GREEN against Rust; routes auth-related slices to Fable; never modifies or deletes Python code; keeps a docs/migration plan file with a migration matrix; and asks before any switch-over or deployment.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28: `/ocd-migrate`
+
+- New migration mode for moving a codebase, or part of one, between any two languages or runtimes. It reuses the gateway, worktree, TDD, graph, and model-routing rules.
+- `references/migration.md` defines the phases: decisions, inventory with leaf-first waves, a parity harness built and passed against the source first, the target foundation, slice-by-slice porting (parity RED then GREEN against the target, then idiomatic refactor), switch-over per slice with approval, and full parity verification against both sides. It also includes a slice contract addendum, a translation hazards checklist, safety rules, and a plan file for resuming in a later chat.
+- Added `commands/ocd-migrate.md` and the `migration-python-to-rust-backend` eval case. The skill description now covers `/ocd-migrate`.
+
 ## 2026-10-28: Graph from latest main
 
 - Before any graph query, the orchestrator updates the graph to the latest commit of the default branch (`git fetch`, then `origin/<default>`), unless the user names another branch for the graph.

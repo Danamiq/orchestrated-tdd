@@ -39,6 +39,24 @@ flowchart TD
 6. **Integrate.** It merges every branch into a separate integration worktree and runs the **full** suite, lint, typecheck, and build there. It resolves conflicts openly.
 7. **Report.** It tells you what was implemented, how each task went, the tests and regression guards, the exact verification commands and results, the integration, outstanding issues, and the approval decisions. Then it asks before landing anything on your branch.
 
+### Migrating between languages: `/ocd-migrate`
+
+```
+/ocd-migrate the backend from Python (FastAPI) to Rust (axum)
+```
+
+This works for any pair of languages. The existing implementation is the specification:
+
+0. **Decisions.** The orchestrator asks about scope, versions, strategy (incremental strangler pattern recommended), the boundary where the two sides meet, the parity standard (bug-for-bug by default), the data plan, a dependency map approved in one batch, performance targets, and when the source may be retired.
+1. **Inventory.** It maps modules, the public surface, side effects, and translation hazards, using the knowledge graph when there is one, and orders slices leaf-first into waves.
+2. **Parity harness first.** It builds language-neutral black-box tests at the boundary, with golden fixtures recorded from the source, and passes them against the source **before** any porting.
+3. **Target foundation.** It scaffolds the target project, the switch-over mechanism (every slice defaults to the source), and the shared types.
+4. **Slice by slice.** Each slice's parity tests go RED, then GREEN, against the target. The slice is then refactored to idiomatic target code, and its tests are ported too. Each slice is routed to a model: Fable for security-sensitive code, Opus for core logic and concurrency, Sonnet for plain modules, Haiku for config and docs.
+5. **Switch-over** happens per slice, with your approval. Deployment and live flag changes stay yours.
+6. **Verify.** The full parity suite runs against the target **and** the source, alongside both unit suites. The final report includes a migration matrix.
+
+The source is never modified or deleted, and parity tests are never weakened. Every intended behavior change needs your approval. Progress lives in `docs/migration/<name>.md`, so `/ocd-migrate continue <name>` can resume in a new chat.
+
 ## Token savings with a knowledge graph
 
 If the repo has a code knowledge graph, the skill uses it to cut what each sub-session spends on exploration. It recognizes graphify (`graphify-out/graph.json`), codebase-memory-mcp, and any graph tool your project instructions name.
@@ -67,6 +85,7 @@ git clone https://github.com/Danamiq/orchestrated-tdd ~/.claude/skills/orchestra
 mkdir -p ~/.claude/commands
 cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md           # /ocd
 cp ~/.claude/skills/orchestrated-tdd/commands/ocd-fix.md ~/.claude/commands/ocd-fix.md   # /ocd-fix
+cp ~/.claude/skills/orchestrated-tdd/commands/ocd-migrate.md ~/.claude/commands/ocd-migrate.md   # /ocd-migrate
 ```
 
 Start a new Claude Code session to load it.
@@ -116,7 +135,7 @@ If an owner is archived or unreachable, the orchestrator asks you before doing a
 | Skill structure and frontmatter | `quick_validate.py` from Anthropic's skill-creator: `Skill is valid!` |
 | `start_session` parameters, turn-end notes, `SendMessage` to `local_…` ids, `get_session` / `list_events` / `archive_session` | Real Claude Desktop sessions in which a parent ran five worktree sub-sessions in parallel |
 | CLI fallback (`claude --bg -w`, cross-session messages both ways, waking idle sessions, nested subagents, contract text passed intact, `stop`/`rm` by id) | Live probe on Claude Code 2.1.311 |
-| End-to-end `/ocd` or `/ocd-fix` run on a real feature | **Not yet run.** `evals/` holds four test prompts; they need a target repo. |
+| End-to-end `/ocd`, `/ocd-fix`, or `/ocd-migrate` run | **Not yet run.** `evals/` holds five test prompts; they need a target repo. |
 
 ## Layout
 
@@ -128,6 +147,8 @@ If an owner is archived or unreachable, the orchestrator asks you before doing a
 | `references/task-contract.md` | Prompt template each sub-session receives, plus the fix-contract template for `/ocd-fix` |
 | `references/tdd-cycle.md` | TDD phases A–F, regression-guard checklist, stack detection; appended to every sub-session prompt |
 | `commands/ocd.md` | `/ocd` slash command: new feature |
+| `commands/ocd-migrate.md` | `/ocd-migrate` slash command: language migration |
+| `references/migration.md` | Migration phases, parity harness, slice contract addendum, translation hazards checklist, safety rules |
 | `commands/ocd-fix.md` | `/ocd-fix` slash command: fix iteration that reuses existing sub-sessions |
 | `evals/` | Test cases in the `claude plugin eval` layout |
 | `CHANGELOG.md` | Design history |
