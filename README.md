@@ -44,6 +44,7 @@ No graph yet? During Ground the orchestrator asks whether to build one. It offer
 ## Guarantees the skill enforces
 
 - **Single gateway.** Sub-sessions never ask you anything directly. Every question and approval passes through the orchestrator.
+- **No question dropped.** `AskUserQuestion` allows 4 questions per call. Beyond that, the orchestrator asks in rounds ordered by impact ("questions 1–4 of 7"). It lists more than 4 options in plain text, and asks for open-ended answers as one numbered list.
 - **Your branch is untouched** until the integrated result passes and you approve the merge.
 - **Evidence or it didn't happen.** RED, GREEN, REFACTOR, and verification count only with commands that were actually run and output that was actually observed.
 - **Regression guards are mandatory.** Every new behavior gets tests that fail if it breaks, and at least one guard is proven by breaking the code on purpose.
