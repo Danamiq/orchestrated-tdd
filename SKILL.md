@@ -1,6 +1,6 @@
 ---
 name: orchestrated-tdd
-description: Turns the main conversation into a development orchestrator for real feature work. It plans the request, splits it into task contracts, and starts each one as a sub-session under the current session (Claude Desktop start_session), each in its own git worktree. A sub-session may start its own subagents. It follows strict test-driven development (observed RED, GREEN, REFACTOR) and adds mandatory regression tests. The orchestrator relays every sub-session question and approval to the user, then merges and independently verifies the combined result. Use it when the user invokes /ocd or /orchestrated-tdd, or asks to orchestrate, delegate, fan out, or parallelize implementation across sub-sessions, sessions, or worktrees. Also use it for any multi-file feature, refactor, or bugfix the user wants built test-first with regression guards and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
+description: Turns the main conversation into a development orchestrator for real feature work. It plans the request, splits it into task contracts, and starts each one as a sub-session under the current session (Claude Desktop start_session), each in its own git worktree. A sub-session may start its own subagents. It follows strict TDD (observed RED, GREEN, REFACTOR) and adds mandatory regression tests. The orchestrator relays every sub-session question and approval to the user, then merges and independently verifies the combined result. Use it when the user invokes /ocd, /ocd-fix (iterate on a built feature, reusing its sub-sessions), or /orchestrated-tdd, or asks to orchestrate, delegate, fan out, or parallelize implementation across sub-sessions, sessions, or worktrees. Also use it for any multi-file feature, refactor, or bugfix the user wants built test-first with regression guards and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
 ---
 
 # Orchestrated TDD
@@ -134,6 +134,19 @@ Ask the user first, unless the request or project instructions clearly authorize
 - new permissions or access
 - merging into the user's branch
 - archiving sub-sessions, or deleting branches or worktrees
+
+## Fix mode (`/ocd-fix`)
+
+A fix is another iteration on a feature that `/ocd` already implemented: a bug, a gap, review feedback, or a changed detail. In fix mode, **don't create new child sessions; reuse the sub-session that built the code**. It already has the context, the worktree, and the TDD history, and a new session would start cold and duplicate them. Procedure (`orchestration.md` → "Fix iterations"):
+
+1. **Find the owners.** Use the ledger if this session still has it. Otherwise, call `list_sessions` (`linked: true`), match `ocd:` titles and `claude/ocd-*` branches, and confirm each match with `get_session`. Map each part of the fix to the sub-session that owns those files.
+2. **Bring each owner up to date.** Fix against the code as it exists now. If its branch was already merged into an integration or user branch, the fix message tells it to update its branch to that SHA first.
+3. **Send a fix contract** to the owner's `session_id` with `SendMessage`, using the template in `task-contract.md` → "Fix contract". TDD still applies: first a test that reproduces the problem (RED, observed), then the fix (GREEN), REFACTOR, and the reproducing test stays as a regression guard.
+4. **Several owners:** send each its own part, in dependency order. A part that no sub-session owns, or a tiny change: do it yourself inline in a worktree, under the same TDD rules.
+5. **Owner archived, missing, or unreachable:** don't silently start a replacement. Ask the user whether you should do the fix inline in a worktree on that branch (recommended for small fixes) or start a new sub-session. A new sub-session needs their explicit approval.
+6. **Verify and integrate as usual** (steps 5–7): check the fix diff and the RED evidence, re-merge into a fresh integration worktree from the current target branch, run the full suite, and ask before landing.
+
+Fix mode never adds new sub-sessions on its own, and it never weakens or deletes the original regression guards to make a fix pass.
 
 ## When the user asks for speed or a shortcut
 

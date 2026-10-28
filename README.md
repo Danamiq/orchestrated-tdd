@@ -43,7 +43,8 @@ flowchart TD
 ```bash
 git clone https://github.com/Danamiq/orchestrated-tdd ~/.claude/skills/orchestrated-tdd
 mkdir -p ~/.claude/commands
-cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md   # /ocd shortcut
+cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md           # /ocd
+cp ~/.claude/skills/orchestrated-tdd/commands/ocd-fix.md ~/.claude/commands/ocd-fix.md   # /ocd-fix
 ```
 
 Start a new Claude Code session to load it.
@@ -57,6 +58,21 @@ From a Claude Code session in the **Claude Desktop app**:
 ```
 
 `/orchestrated-tdd ...` works too, and Claude may pick the skill on its own for multi-file features you ask to have built test-first.
+
+### Iterating on a feature: `/ocd-fix`
+
+```
+/ocd-fix the CSV export puts dates as epoch millis, should be ISO 8601; the CLI also ignores --format json
+```
+
+A fix is another iteration on a feature that `/ocd` already built. The orchestrator **doesn't create new child sessions** for it. Instead:
+
+- It finds the sub-sessions that built the affected code, using its ledger, `list_sessions`, or git branch ownership.
+- It sends each owner a short fix contract with `SendMessage`. The owner keeps its context, worktree, and TDD history.
+- The owner first updates its branch to the current integrated code. Then it writes a failing test that reproduces the problem, fixes it, and keeps that test as a regression guard.
+- The orchestrator re-integrates in a fresh integration worktree, runs the full suite, and asks before landing.
+
+If an owner is archived or unreachable, the orchestrator asks you before doing anything else. You can let it fix the problem inline on that branch, or approve a new sub-session.
 
 ## Requirements
 
@@ -78,17 +94,18 @@ From a Claude Code session in the **Claude Desktop app**:
 | Skill structure and frontmatter | `quick_validate.py` from Anthropic's skill-creator: `Skill is valid!` |
 | `start_session` parameters, turn-end notes, `SendMessage` to `local_…` ids, `get_session` / `list_events` / `archive_session` | Real Claude Desktop sessions in which a parent ran five worktree sub-sessions in parallel |
 | CLI fallback (`claude --bg -w`, cross-session messages both ways, waking idle sessions, nested subagents, contract text passed intact, `stop`/`rm` by id) | Live probe on Claude Code 2.1.311 |
-| End-to-end `/ocd` run on a real feature | **Not yet run.** `evals/` holds three test prompts; they need a target repo. |
+| End-to-end `/ocd` or `/ocd-fix` run on a real feature | **Not yet run.** `evals/` holds four test prompts; they need a target repo. |
 
 ## Layout
 
 | Path | Purpose |
 |---|---|
 | `SKILL.md` | Orchestrator workflow, invariants, approval boundaries, final report format |
-| `references/orchestration.md` | Sub-session tools, dispatch, messaging and turn-end reports, status, permission prompts, worktree base, stacked tasks, retries, conflicts, integration, user access, cleanup, CLI fallback |
-| `references/task-contract.md` | Prompt template each sub-session receives |
+| `references/orchestration.md` | Sub-session tools, dispatch, messaging and turn-end reports, status, permission prompts, worktree base, stacked tasks, retries, conflicts, integration, fix iterations, user access, cleanup, CLI fallback |
+| `references/task-contract.md` | Prompt template each sub-session receives, plus the fix-contract template for `/ocd-fix` |
 | `references/tdd-cycle.md` | TDD phases A–F, regression-guard checklist, stack detection; appended to every sub-session prompt |
-| `commands/ocd.md` | `/ocd` slash-command wrapper |
+| `commands/ocd.md` | `/ocd` slash command: new feature |
+| `commands/ocd-fix.md` | `/ocd-fix` slash command: fix iteration that reuses existing sub-sessions |
 | `evals/` | Test cases in the `claude plugin eval` layout |
 | `CHANGELOG.md` | Design history |
 

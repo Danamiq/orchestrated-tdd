@@ -104,3 +104,35 @@ RISKS: <integration risks, assumptions other tasks must share, follow-ups>
 
 ---- TDD CYCLE (appended at dispatch) ----
 ```
+
+## Fix contract (`/ocd-fix`)
+
+Send this with `SendMessage` to the sub-session that originally built the code. It is a delta on that sub-session's original contract, which it still has in context, so don't repeat the parts that haven't changed. The TDD cycle it received at dispatch still applies.
+
+```
+OCD FIX <n> for ocd-<task>. Same contract, ownership, and rules as before unless changed below.
+
+## Problem
+Observed: <what happens now: error text, wrong output, failing test, user feedback>
+Expected: <correct behavior>
+Repro: <steps or command that shows it>
+
+## Update first
+Your branch must contain <SHA of current integration/target branch> before you start.
+If `git merge-base --is-ancestor <SHA> HEAD` fails: run `git merge --ff-only <SHA>`, or
+`git merge <SHA>` if fast-forward is impossible. On a conflict, report BLOCKED. Don't resolve
+it against another sub-session's code yourself.
+
+## Scope of this fix
+You may modify: <same as before, or the changed list>
+Acceptance criteria: <numbered, observable>
+
+## Required
+1. RED: add or adjust a test that reproduces the problem; run it; see it fail for the expected reason.
+2. GREEN: smallest fix; run the targeted tests.
+3. REFACTOR if useful; re-run.
+4. Keep the reproducing test as a regression guard. Never weaken or delete existing guards
+   to make the fix pass. If an existing guard looks wrong, report BLOCKED with why.
+5. Run the full verification set, commit on your branch, and end your turn with the usual
+   report (first line `OCD REPORT ocd-<task> <STATUS>`, plus `FIX: <n>`).
+```

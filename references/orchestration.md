@@ -144,6 +144,32 @@ git merge --no-ff <child branch 2>
 - If `.claude/worktrees/` shows up as untracked in the user's `git status`, never commit it. Mention it; they may want it in `.gitignore`.
 - Landing needs user approval. On approval, from the user's checkout: if their branch is still at `BASE_SHA`, run `git merge --ff-only ocd/FEATURE`; otherwise run `git merge ocd/FEATURE`. If they have uncommitted changes that overlap the merged files, ask first.
 
+## Fix iterations
+
+In fix mode (`/ocd-fix`), reuse the sub-sessions that built the feature; don't create new ones.
+
+**Finding the owners**
+- Ledger first. If the ledger is gone (e.g. a new conversation), call `list_sessions` with `linked: true` and a small `limit`. Match `ocd:` titles and `claude/ocd-*` branches. Confirm with `get_session`: `branch`, `cwd`, `isArchived`, `isRunning`.
+- `linked: true` lists sessions that *this* session started. If the orchestrator is a different conversation from the one that ran `/ocd`, search with `search_session_transcripts` (query: the `ocd-TASK` name) or `list_sessions` without `linked`.
+- Then confirm ownership from git: `git log --format=%H -- <files>` and `git branch --contains <commit>` show which `claude/ocd-*` branch introduced the code you need to fix.
+
+**Reaching the owners**
+- Use `SendMessage` with `to: "<session_id>"`. The message starts its next turn with its full context.
+- A turn-end note reaches only the session that **started** the child. If you aren't that parent, add to the fix contract: "Also SendMessage your report to <your address>."
+- The owner is running (`isRunning: true`) and mid-task: queue the fix message; it is delivered at its next tool round. Don't start a second session on the same branch.
+
+**Bringing a branch up to date.** After integration, a child's branch is behind the merged result. The fix contract's "Update first" step makes it fast-forward, or merge, to the current target SHA before writing the reproducing test. A merge conflict there is a BLOCKED report for you to resolve, not something the child settles against a sibling's code.
+
+**No usable owner.** If the owner is archived, gone, or refuses, ask the user to choose:
+1. You do the fix inline: `git worktree add <path> <owner branch>`, with the same TDD rules (recommended for small fixes).
+2. A new sub-session: `start_session` with `source_branch` set to the owner's branch, the original contract, and the fix contract. Do this only with explicit approval.
+
+Never start a replacement silently.
+
+**After the fix.** Verify the fix diff and its RED evidence as in SKILL.md step 5. Then create a fresh integration worktree from the current target branch (the user's branch, or the previous `ocd/FEATURE` if it hasn't landed yet) and merge the fixed branches. Run the full suite there, and ask before landing.
+
+**CLI fallback.** The same rule applies. Send the fix to the existing `ocd-TASK` background session (`SendMessage` with `to: "ocd-TASK"`, `notify_when_idle: true`). Don't launch a new `claude --bg` without approval.
+
 ## User access to a sub-session
 
 Every sub-session is a normal session in the Claude Desktop app under the title you gave it, and the user can open it and type there at any time. Before they do, tell them its title, status, and anything it is waiting on. While they are in it, hold your own messages to that session. When they return, ask what they decided or changed, re-read its branch (`git log`, `git status`, tests) and its recent events, and update the ledger before continuing.
