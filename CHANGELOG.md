@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-28: More than 4 questions
+
+- AskUserQuestion's cap (4 questions per call, 2–4 options per question) is a tool limit. The new "Asking the user" section in `SKILL.md` orders questions by impact and asks them in consecutive rounds of 4 until all are answered. It lists more than 4 options in plain text, and asks for open-ended answers as one numbered plain-text list. No question is dropped or silently defaulted.
+
 ## 2026-10-28: Knowledge-graph traversal
 
 - New `references/knowledge-graph.md`. When the repo has graphify, codebase-memory-mcp, or a graph tool named by the project, the orchestrator explores with it and traces inbound callers to divide ownership. It gives each sub-session a small context slice (symbols with `file:line`, callers, tests, and the graph commands) to cut exploration tokens.

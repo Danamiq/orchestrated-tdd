@@ -70,7 +70,7 @@ Lifecycle: `PLANNED → RUNNING → BLOCKED | COMPLETED | FAILED → VERIFIED �
 - **COMPLETED is not VERIFIED.** You verify (step 5) before anything moves on.
 - **BLOCKED** (needs a decision, approval, credentials, an environment change, or a scope change):
   - Present it to the user in plain language: what is blocked, why the decision matters, the options, and your recommendation if one is justified.
-  - Use AskUserQuestion when the options are discrete, and batch blockers that arrive close together.
+  - Use AskUserQuestion when the options are discrete, and batch blockers that arrive close together. Beyond 4 questions or 4 options, follow "Asking the user" below.
   - Send the user's exact answer to that sub-session (`SendMessage` with `to: "<session_id>"`); this starts its next turn.
 - **FAILED**, or silent too long: before acting, read `get_session`, its recent `list_events`, and its branch. Then message it, restart it, or finish the work yourself, keeping the original contract (`orchestration.md` → "Retries and failures").
 - Progress updates to the user: only at milestones (plan ready, task verified, blocker, integration result). No per-tool narration.
@@ -136,6 +136,14 @@ Ask the user first, unless the request or project instructions clearly authorize
 - new permissions or access
 - merging into the user's branch
 - archiving sub-sessions, or deleting branches or worktrees
+
+## Asking the user
+
+AskUserQuestion takes at most 4 questions per call and 2–4 options per question. That is a tool limit, not a budget: never drop, merge away, or silently default a question because of it.
+- **More than 4 questions:** order them by impact (safety and scope first, then correctness, then preferences). Ask the top 4, then immediately ask the next 4 in another call, and keep going until all are answered. Say up front how many rounds there are ("questions 1–4 of 7").
+- **More than 4 real options:** list them in plain text with your recommendation; the user replies in words, or through the tool's "Other" field. Don't squeeze distinct options into vague ones to fit.
+- **Open-ended answers** (names, values, free text): ask in plain text as one numbered list, so the user can answer everything in one reply.
+- Batch only what's ready. A question that depends on an earlier answer waits for the next round.
 
 ## Fix mode (`/ocd-fix`)
 
