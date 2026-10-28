@@ -41,6 +41,7 @@ Produce a short plan:
 - **Tasks**, each with: objective, owned files/modules/interfaces, acceptance criteria, dependencies, verification commands.
 - **Dependency order**: what can run in parallel, what must wait. Never parallelize a task that needs unfinished work from another.
 - **Delegate or inline**: do it yourself when the work is a small, single-area change where a contract costs more than the work. Start sub-sessions for independent workstreams of real size.
+- **Model** for each task, per "Model routing" below. Show it in the plan.
 - **Consolidate** when it helps: you may give several tasks to one sub-session when they are tightly coupled, touch the same files, share a hard-to-explain context, or are too small to justify separate worktrees. Fewer, well-scoped sub-sessions beat many thin ones.
 
 Show the plan to the user in one compact message, together with any **batched** questions whose answers change correctness, scope, or safety. If there are no such questions, proceed without waiting. If there are, wait for answers before dispatching the affected tasks.
@@ -54,6 +55,7 @@ For each delegated task:
   - `use_worktree: true`, `branch_name: "ocd-TASK"`, and `source_branch` set to the user's branch
   - `background`: shared context and who owns what among sibling sub-sessions
   - `prompt`: the contract with `tdd-cycle.md` appended
+  - `model`: the task's routed model ID (full ID, e.g. `claude-sonnet-5-5`)
 - Record the `session_id` in the ledger only if the call actually returned one. Then read its branch and worktree path with `get_session`.
 - Don't wait on it. Its turn-end note will come to you.
 - Run independent tasks concurrently (default cap: 3 at once, or the user's configured cap). A dependent task waits until the task it depends on is VERIFIED; then that task's branch becomes its base (`orchestration.md` → "Stacked tasks").
@@ -62,7 +64,7 @@ For each delegated task:
 
 Keep a ledger, and update it on every state change. Use a task/todo tool when one exists; otherwise keep it as a table in your progress messages.
 
-| Task | Sub-session (title / session_id) | Status | Branch @ HEAD SHA (worktree) | Tests (red→green) | Blockers / pending questions |
+| Task | Model | Sub-session (title / session_id) | Status | Branch @ HEAD SHA (worktree) | Tests (red→green) | Blockers / pending questions |
 
 Lifecycle: `PLANNED → RUNNING → BLOCKED | COMPLETED | FAILED → VERIFIED → INTEGRATED`
 
@@ -103,7 +105,7 @@ Only after every task is VERIFIED and **no `ocd-` sub-session is running**:
 ## Implemented
 <what changed and why, by behavior>
 ## Delegated tasks
-<task — sub-session — outcome — status>
+<task — model — sub-session — outcome — status>
 ## Tests
 <tests added/modified; mark each regression guard and what it protects>
 ## Verification
@@ -136,6 +138,26 @@ Ask the user first, unless the request or project instructions clearly authorize
 - new permissions or access
 - merging into the user's branch
 - archiving sub-sessions, or deleting branches or worktrees
+
+## Model routing
+
+Give every sub-session the cheapest model that can do its task well. Pick the tier from the task's hardest part:
+
+| Tier | Latest model of | Tasks |
+|---|---|---|
+| Security | **Fable** | Anything security-relevant: authentication/authorization, permissions and tenant isolation, secrets, crypto, input validation at trust boundaries, injection/XSS/SSRF surfaces, dependency or supply-chain changes, security fixes. **Security wins over every other tier.** |
+| Complex | **Opus** | Design-heavy or cross-cutting work: new architecture or public interfaces, multi-module changes, concurrency, data-integrity logic, performance-critical paths, unclear root causes, risky integration points. |
+| Menial | **Sonnet** | Standard, well-specified implementation: known patterns, CRUD, routes and handlers, UI wiring, tests and fixtures, per-site migrations of an agreed change. |
+| Most menial | **Haiku** | Mechanical changes with no design: renames, copy/text, config values, formatting, docs, one-pattern sweeps. |
+
+Rules:
+- Order of precedence: security, then complex, then menial, then most menial. If unsure, pick the higher tier.
+- A consolidated sub-session gets the tier of its hardest task.
+- Explicit user or project instructions about models override this table.
+- **Resolve "latest" at run time; don't trust a remembered ID.** Use the newest model ID of each family listed in this session's environment information. As of 2026-10 those are `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, and `claude-haiku-5-5`. Pass the full ID: `start_session` has been seen accepting full IDs, and short aliases are untested there. If a model is rejected, use the next higher tier and note it in the ledger; never drop to a lower tier silently.
+- Tell each sub-session its tier in the contract, so it routes its own subagents the same way. A subagent never gets a higher tier than its sub-session.
+- Your own work as orchestrator (planning, verification, integration) stays on your current model.
+- `/ocd-fix` reuses the owner session, which keeps its model. If a fix needs a higher tier than the owner runs (e.g. a security fix in a Sonnet-built area), ask the user: the owner does it anyway (keeps context), or a new sub-session on the right tier (needs approval). In the CLI fallback, pass `--model <id>`.
 
 ## Asking the user
 

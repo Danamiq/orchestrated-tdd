@@ -51,11 +51,20 @@ You may read anything. Do not modify anything else. If the task needs a change o
 this list, a new dependency, a schema/migration, a public-interface change, or a material
 requirement change: STOP that part and report BLOCKED (see below). Don't expand scope silently.
 
+## Your model tier
+You run on: <security: Fable | complex: Opus | menial: Sonnet | most menial: Haiku> (<model id>)
+If the task turns out to need a higher tier than this (e.g. you find security-relevant
+code, or a design problem you didn't expect), say so in your report under RISKS. Don't
+stop over it.
+
 ## Your own subagents
 You may start subagents with the Agent tool (e.g. exploration, writing a test batch, a
-parallel sub-step). Give them only work inside your worktree and ownership. They don't
-contact the orchestrator or the user. You check their output and you own the evidence: a
-subagent saying "tests pass" still means you run the tests yourself before reporting.
+parallel sub-step). Give them only work inside your worktree and ownership. Set the Agent
+tool's `model` per sub-step, using the same routing and never above your own tier:
+`haiku` for sweeps, listings, renames, and docs; `sonnet` for mechanical edits, tests, and
+fixtures; keep design, security, and review on your own model. Subagents don't contact the
+orchestrator or the user. You check their output and you own the evidence: a subagent
+saying "tests pass" still means you run the tests yourself before reporting.
 
 ## Acceptance criteria
 <numbered, observable, testable>

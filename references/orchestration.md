@@ -63,7 +63,8 @@ Call `mcp__ccd_session__start_session` once per task:
 
 - `initiation: "user_asked"` is correct because the user invoked `/ocd`. The sub-session starts immediately.
 - `context: "fresh"` means the child starts with only `background` and `prompt`, so put everything it needs there. Inline `tdd-cycle.md` so it never has to read files outside its worktree.
-- Optional `model`: only when the user or the project asks for a specific model.
+- `model`: always set it, to the task's routed tier (SKILL.md → "Model routing"), using the newest full ID of that family from the environment information (e.g. `claude-sonnet-5-5`). If `start_session` rejects the model, retry with the next higher tier and record the substitution in the ledger. Never retry with a lower tier.
+- `use_worktree: false` is refused when the orchestrator itself runs in a worktree (seen: "its worktree can't be shared"). Keep `use_worktree: true`.
 - The result names the `session_id` (`local_...`) and says the session "runs on its own; you get a note here when its turn ends". Follow that: at most one line on how you'll report back, then carry on or end your turn. **Don't wait** in a loop.
 - Record the `session_id`. Its branch is `claude/<branch_name>-<suffix>`; get the exact name and worktree path from `get_session` (`branch`, `cwd`) and put them in the ledger.
 - Launch independent tasks back-to-back (default cap: 3 running at once).
