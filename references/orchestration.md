@@ -148,14 +148,14 @@ git merge --no-ff <child branch 2>
 
 In fix mode (`/ocd-fix`), reuse the sub-sessions that built the feature; don't create new ones.
 
+**Where it may run.** Only in the orchestrator conversation that ran `/ocd` for the feature, the parent of its sub-sessions. That is the only session that receives their turn-end reports and holds the ledger and the user's earlier decisions. If `list_sessions` (`linked: true`) shows no `ocd:` sub-sessions started by this session, stop and tell the user to run `/ocd-fix` in the original `/ocd` chat. Don't search other conversations for sub-sessions or message them from here.
+
 **Finding the owners**
-- Ledger first. If the ledger is gone (e.g. a new conversation), call `list_sessions` with `linked: true` and a small `limit`. Match `ocd:` titles and `claude/ocd-*` branches. Confirm with `get_session`: `branch`, `cwd`, `isArchived`, `isRunning`.
-- `linked: true` lists sessions that *this* session started. If the orchestrator is a different conversation from the one that ran `/ocd`, search with `search_session_transcripts` (query: the `ocd-TASK` name) or `list_sessions` without `linked`.
+- Ledger first. Otherwise call `list_sessions` with `linked: true` and a small `limit`, and match `ocd:` titles and `claude/ocd-*` branches. Confirm with `get_session`: `branch`, `cwd`, `isArchived`, `isRunning`.
 - Then confirm ownership from git: `git log --format=%H -- <files>` and `git branch --contains <commit>` show which `claude/ocd-*` branch introduced the code you need to fix.
 
 **Reaching the owners**
-- Use `SendMessage` with `to: "<session_id>"`. The message starts its next turn with its full context.
-- A turn-end note reaches only the session that **started** the child. If you aren't that parent, add to the fix contract: "Also SendMessage your report to <your address>."
+- Use `SendMessage` with `to: "<session_id>"`. The message starts its next turn with its full context, and its turn-end report comes back to you as usual.
 - The owner is running (`isRunning: true`) and mid-task: queue the fix message; it is delivered at its next tool round. Don't start a second session on the same branch.
 
 **Bringing a branch up to date.** After integration, a child's branch is behind the merged result. The fix contract's "Update first" step makes it fast-forward, or merge, to the current target SHA before writing the reproducing test. A merge conflict there is a BLOCKED report for you to resolve, not something the child settles against a sibling's code.

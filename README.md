@@ -65,7 +65,7 @@ From a Claude Code session in the **Claude Desktop app**:
 /ocd-fix the CSV export puts dates as epoch millis, should be ISO 8601; the CLI also ignores --format json
 ```
 
-A fix is another iteration on a feature that `/ocd` already built. The orchestrator **doesn't create new child sessions** for it. Instead:
+A fix is another iteration on a feature that `/ocd` already built. Run it **in the same chat that ran `/ocd`**; that orchestrator is the parent of the sub-sessions. In any other chat, `/ocd-fix` stops and points you back to the original one. The orchestrator **doesn't create new child sessions** for a fix. Instead:
 
 - It finds the sub-sessions that built the affected code, using its ledger, `list_sessions`, or git branch ownership.
 - It sends each owner a short fix contract with `SendMessage`. The owner keeps its context, worktree, and TDD history.

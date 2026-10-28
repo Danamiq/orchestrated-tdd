@@ -3,6 +3,7 @@
 ## 2026-10-28: `/ocd-fix`
 
 - New fix mode for iterating on a feature that `/ocd` already built. The orchestrator reuses the sub-sessions that built the code and creates no new child sessions.
+- `/ocd-fix` runs only in the original `/ocd` orchestrator chat, the parent of the sub-sessions. Anywhere else it stops and points the user back to that chat.
 - Owners are found from the ledger, `list_sessions` (`linked: true`), or git branch ownership. Each owner gets a fix contract by `SendMessage`.
 - In a fix, the owner first updates its branch to the integrated SHA. Then it writes a failing reproducing test, fixes the problem, and keeps that test as a regression guard. Existing guards are never weakened.
 - An archived or unreachable owner leads to a user choice: inline fix (recommended) or a new sub-session with explicit approval. A replacement is never started silently.
