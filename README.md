@@ -84,6 +84,7 @@ No graph yet? During Ground the orchestrator asks whether to build one. It offer
 git clone https://github.com/Danamiq/orchestrated-tdd ~/.claude/skills/orchestrated-tdd
 mkdir -p ~/.claude/commands
 cp ~/.claude/skills/orchestrated-tdd/commands/ocd.md ~/.claude/commands/ocd.md           # /ocd
+cp ~/.claude/skills/orchestrated-tdd/commands/ocd-one.md ~/.claude/commands/ocd-one.md   # /ocd-one
 cp ~/.claude/skills/orchestrated-tdd/commands/ocd-fix.md ~/.claude/commands/ocd-fix.md   # /ocd-fix
 cp ~/.claude/skills/orchestrated-tdd/commands/ocd-migrate.md ~/.claude/commands/ocd-migrate.md   # /ocd-migrate
 ```
@@ -99,6 +100,22 @@ From a Claude Code session in the **Claude Desktop app**:
 ```
 
 `/orchestrated-tdd ...` works too, and Claude may pick the skill on its own for multi-file features you ask to have built test-first.
+
+### One feature or fix in this session: `/ocd-one`
+
+```
+/ocd-one add rate limiting to POST /login (5 attempts per minute per IP)
+```
+
+This runs the same workflow without starting any sub-sessions. The current session does it all:
+- grounding, with the knowledge graph refreshed from latest main
+- a short plan, with your questions batched
+- its own worktree and branch
+- observed RED, GREEN, and REFACTOR, plus regression guards with at least one proven by breaking the code on purpose
+- self-verification and the full suite
+- the final report, then a question before merging into your branch
+
+If the task needs a higher model tier than the session runs on (e.g. security work in a Sonnet session), it says so first and suggests `/model` or `/ocd`. If the work turns out to be several workstreams, it stops and recommends `/ocd`.
 
 ### Iterating on a feature: `/ocd-fix`
 
@@ -135,7 +152,7 @@ If an owner is archived or unreachable, the orchestrator asks you before doing a
 | Skill structure and frontmatter | `quick_validate.py` from Anthropic's skill-creator: `Skill is valid!` |
 | `start_session` parameters, turn-end notes, `SendMessage` to `local_…` ids, `get_session` / `list_events` / `archive_session` | Real Claude Desktop sessions in which a parent ran five worktree sub-sessions in parallel |
 | CLI fallback (`claude --bg -w`, cross-session messages both ways, waking idle sessions, nested subagents, contract text passed intact, `stop`/`rm` by id) | Live probe on Claude Code 2.1.311 |
-| End-to-end `/ocd`, `/ocd-fix`, or `/ocd-migrate` run | **Not yet run.** `evals/` holds five test prompts; they need a target repo. |
+| End-to-end `/ocd`, `/ocd-one`, `/ocd-fix`, or `/ocd-migrate` run | **Not yet run.** `evals/` holds six test prompts; they need a target repo. |
 
 ## Layout
 
@@ -149,6 +166,7 @@ If an owner is archived or unreachable, the orchestrator asks you before doing a
 | `commands/ocd.md` | `/ocd` slash command: new feature |
 | `commands/ocd-migrate.md` | `/ocd-migrate` slash command: language migration |
 | `references/migration.md` | Migration phases, parity harness, slice contract addendum, translation hazards checklist, safety rules |
+| `commands/ocd-one.md` | `/ocd-one` slash command: one feature or fix in the current session, no sub-sessions |
 | `commands/ocd-fix.md` | `/ocd-fix` slash command: fix iteration that reuses existing sub-sessions |
 | `evals/` | Test cases in the `claude plugin eval` layout |
 | `CHANGELOG.md` | Design history |

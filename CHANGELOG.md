@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28: `/ocd-one`
+
+- New single mode: one feature or fix done in the current session. It never calls `start_session` and never messages existing sub-sessions.
+- It keeps the same workflow: grounding with a graph refreshed from latest main, a short plan, work in its own worktree, observed TDD A–F, proven regression guards, self-verification against the step 5 checklist, the full suite, the final report, and a question before merging.
+- It warns when the task's model tier is above the session's model, and it stops and recommends `/ocd` when the work grows into several workstreams.
+- Added `commands/ocd-one.md` and the `single-mode-no-sub-sessions` eval case.
+
 ## 2026-10-28: `/ocd-migrate`
 
 - New migration mode for moving a codebase, or part of one, between any two languages or runtimes. It reuses the gateway, worktree, TDD, graph, and model-routing rules.

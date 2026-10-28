@@ -1,6 +1,6 @@
 ---
 name: orchestrated-tdd
-description: Turns the main conversation into a development orchestrator. It plans the work, splits it into task contracts, and starts each as a sub-session under the current session (Claude Desktop start_session) in its own git worktree, on a model routed by task difficulty. Sub-sessions follow strict TDD (observed RED, GREEN, REFACTOR) with mandatory regression tests. The orchestrator relays every question and approval to the user, then merges and verifies the combined result. Use it when the user invokes /ocd (feature), /ocd-fix (iterate on a built feature with its existing sub-sessions), /ocd-migrate (move a codebase from one language to another), or /orchestrated-tdd, or asks to orchestrate, delegate, or parallelize implementation across sub-sessions or worktrees. Also use it for multi-file features, refactors, bugfixes, or language migrations the user wants built test-first and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
+description: Turns the main conversation into a development orchestrator. It plans the work, splits it into task contracts, and starts each as a sub-session under the current session (Claude Desktop start_session) in its own git worktree, on a model routed by task difficulty. Work follows strict TDD (observed RED, GREEN, REFACTOR) with mandatory regression tests; the orchestrator relays every question and approval to the user, then merges and verifies the result. Use it when the user invokes /ocd (feature), /ocd-one (one feature or fix done in this session, no sub-sessions), /ocd-fix (iterate with existing sub-sessions), /ocd-migrate (move code between languages), or /orchestrated-tdd, or asks to orchestrate or parallelize implementation across sub-sessions or worktrees. Also use it for features, refactors, bugfixes, or migrations the user wants built test-first and verified end to end, even if the skill is not named. Not for questions, review-only requests, or one-line edits.
 ---
 
 # Orchestrated TDD
@@ -159,6 +159,21 @@ Rules:
 - Tell each sub-session its tier in the contract, so it routes its own subagents the same way. A subagent never gets a higher tier than its sub-session.
 - Your own work as orchestrator (planning, verification, integration) stays on your current model.
 - `/ocd-fix` reuses the owner session, which keeps its model. If a fix needs a higher tier than the owner runs (e.g. a security fix in a Sonnet-built area), ask the user: the owner does it anyway (keeps context), or a new sub-session on the right tier (needs approval). In the CLI fallback, pass `--model <id>`.
+
+## Single mode (`/ocd-one`)
+
+One feature addition or one fix, done **in this session**: no sub-sessions are started and none are messaged. You are both the orchestrator and the implementer, and the workflow and its evidence rules stay the same:
+
+1. **Ground** as in step 1, including the knowledge graph (refreshed from latest main; ask about building one if none exists) and the verification commands.
+2. **Plan** briefly: the outcome, acceptance criteria, files you'll touch, and verification commands, plus any batched questions. If the work turns out to have several independent workstreams or is large, stop and recommend `/ocd`. Don't silently expand.
+3. **Isolate.** If this session already runs in its own worktree on its own branch, work there. Otherwise create one: `EnterWorktree` (the `/ocd-one` command asks for a worktree), or `git worktree add -b ocd/<slug> .claude/worktrees/ocd-<slug> <base>`. Use the user's branch as the base, or the not-yet-landed `ocd/FEATURE` integration branch when fixing that feature. Never edit the user's branch directly.
+4. **Implement with TDD**, following `references/tdd-cycle.md` A–F yourself: RED observed for the expected reason, GREEN, REFACTOR, regression guards (prove one by breaking the code on purpose), full verification, and a diff review. You may start your own subagents for sub-steps, routed as in "Model routing".
+5. **Self-verify** honestly with the step 5 checklist; there is nobody else to catch a gap. Then run the full suite on your branch.
+6. **Report** with the step 7 template, without the "Delegated tasks" section and with the model you ran on. Ask before merging into the user's branch.
+
+**Model:** you run on the session's current model. If the task's tier (see "Model routing") is higher, e.g. security-relevant work in a Sonnet session, say so in one line before implementing. Recommend switching with `/model`, or using `/ocd`, which routes a sub-session to the right tier. Proceed only if the user agrees.
+
+`/ocd-one` never calls `start_session` and never messages existing sub-sessions, even ones that built the code being fixed. Only the user's branch decides the base.
 
 ## Migration mode (`/ocd-migrate`)
 
